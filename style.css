@@ -222,24 +222,82 @@
             align-items: center;
         }
 /* -----------------------------------
-   Message Bubble Animations 
+   1. Fun Bubble Animations (Jelly Bounce)
 --------------------------------------*/
-@keyframes popInLeft {
-    0% { opacity: 0; transform: scale(0.8) translateX(-30px); }
-    100% { opacity: 1; transform: scale(1) translateX(0); }
+@keyframes jellyLeft {
+    0% { transform: scale(0.5) translateX(-40px) rotate(-5deg); opacity: 0; }
+    40% { transform: scale(1.05) translateX(5px) rotate(2deg); opacity: 1; }
+    70% { transform: scale(0.95) translateX(-2px) rotate(-1deg); }
+    100% { transform: scale(1) translateX(0) rotate(0deg); opacity: 1; }
 }
 
-@keyframes popInRight {
-    0% { opacity: 0; transform: scale(0.8) translateX(30px); }
-    100% { opacity: 1; transform: scale(1) translateX(0); }
+@keyframes jellyRight {
+    0% { transform: scale(0.5) translateX(40px) rotate(5deg); opacity: 0; }
+    40% { transform: scale(1.05) translateX(-5px) rotate(-2deg); opacity: 1; }
+    70% { transform: scale(0.95) translateX(2px) rotate(1deg); }
+    100% { transform: scale(1) translateX(0) rotate(0deg); opacity: 1; }
 }
 
-/* Apply animation classes to bubbles */
 .message-row.other .message-bubble.animate-pop {
-    /* Bouncy spring-like curve */
-    animation: popInLeft 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    animation: jellyLeft 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    transform-origin: left bottom; /* Makes the bounce look anchored */
 }
 
 .message-row.me .message-bubble.animate-pop {
-    animation: popInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    animation: jellyRight 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    transform-origin: right bottom;
+}
+
+/* -----------------------------------
+   2. Floating Lock Icon (Login Screen)
+--------------------------------------*/
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-12px); }
+}
+
+#login-overlay .bi-lock-fill {
+    animation: float 3s ease-in-out infinite;
+    display: inline-block;
+    color: var(--accent-color) !important; /* Adds a bit of brand color! */
+}
+
+/* -----------------------------------
+   3. Button Hover Pops
+--------------------------------------*/
+.btn {
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.btn:active {
+    transform: translateY(1px); /* Pushes down when clicked */
+}
+
+/* -----------------------------------
+   4. Navbar Logo Drop-in
+--------------------------------------*/
+@keyframes dropIn {
+    0% { transform: translateY(-20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+
+.navbar-brand {
+    animation: dropIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* -----------------------------------
+   5. Smooth Login Overlay Fade Out
+--------------------------------------*/
+#login-overlay {
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+#login-overlay.fade-out {
+    opacity: 0;
+    visibility: hidden;
 }
