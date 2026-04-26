@@ -221,3 +221,25 @@
             justify-content: center;
             align-items: center;
         }
+/* -----------------------------------
+   Message Bubble Animations 
+--------------------------------------*/
+@keyframes popInLeft {
+    0% { opacity: 0; transform: scale(0.8) translateX(-30px); }
+    100% { opacity: 1; transform: scale(1) translateX(0); }
+}
+
+@keyframes popInRight {
+    0% { opacity: 0; transform: scale(0.8) translateX(30px); }
+    100% { opacity: 1; transform: scale(1) translateX(0); }
+}
+
+/* Apply animation classes to bubbles */
+.message-row.other .message-bubble.animate-pop {
+    /* Bouncy spring-like curve */
+    animation: popInLeft 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.message-row.me .message-bubble.animate-pop {
+    animation: popInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
