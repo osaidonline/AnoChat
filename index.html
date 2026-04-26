@@ -467,7 +467,7 @@ imageFile.addEventListener('change', async (e) => {
         
         if (data.success) {
             // Create an HTML tag for the image and add it to the input field
-            const imgHtml = `<br><img src="${data.data.url}" style="max-width: 100%; border-radius: 8px; margin-top: 5px;">`;
+           const imgHtml = `<br><img src="${data.data.url}" style="max-width: 200px; border-radius: 8px; margin-top: 5px;">`;
             messageInput.value += imgHtml;
             
             // Automatically click send!
