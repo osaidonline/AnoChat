@@ -150,8 +150,9 @@
         let displayName = "";
         let isAdmin = false;
         let pollingInterval = null;
-        let lastMessagesStr = "";
-
+        let lastMessagesStr = ""
+        let renderedMsgIds = new Set();
+        let isFirstLoad = true;
         // DOM Elements
         const loginOverlay = document.getElementById('login-overlay');
         const loginModalElement = document.getElementById('loginModal');
@@ -286,7 +287,7 @@
             }
         }
 
-        function renderMessages(messages) {
+     function renderMessages(messages) {
             const currentStr = JSON.stringify(messages);
             if (currentStr === lastMessagesStr) return; // Prevent flickering if no changes
             lastMessagesStr = currentStr;
@@ -307,7 +308,7 @@
                 const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Sending...';
                 
                 let controlsHtml = '';
-                // Only show edit/delete if it's my message, or if I am the Admin (Osaid)
+                // Only show edit/delete if it's my message, or if I am the Admin
                 if (isMe) {
                     controlsHtml += `<button onclick="editMessage('${msg.id}', \`${msg.text.replace(/`/g, "\\`")}\`)"><i class="bi bi-pencil"></i> Edit</button>`;
                 }
@@ -315,8 +316,12 @@
                     controlsHtml += `<button onclick="deleteMessage('${msg.id}')" class="text-danger"><i class="bi bi-trash"></i> Delete</button>`;
                 }
 
+                // CHECK IF NEW: Only animate if it's not the initial page load AND we haven't seen this ID before
+                const isNewMessage = !isFirstLoad && !renderedMsgIds.has(msg.id);
+                renderedMsgIds.add(msg.id);
+
                 row.innerHTML = `
-                    <div class="message-bubble" style="background-color: ${bgColor};">
+                    <div class="message-bubble ${isNewMessage ? 'animate-pop' : ''}" style="background-color: ${bgColor};">
                         ${!isMe ? `<div class="author-name">${msg.author}</div>` : `<div class="author-name text-white-50">You</div>`}
                         <div class="message-content">${msg.text}</div>
                         ${msg.edited ? '<small class="text-white-50" style="font-size: 0.6rem;">(edited)</small>' : ''}
@@ -326,6 +331,9 @@
                 `;
                 chatWindow.appendChild(row);
             });
+
+            // Set first load to false after rendering the initial batch of messages
+            isFirstLoad = false;
 
             // Auto-scroll if user was already at the bottom
             if (isScrolledToBottom || chatWindow.scrollTop === 0) {
