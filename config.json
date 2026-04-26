@@ -1,0 +1,13 @@
+{
+  "firebaseConfig": {
+    "apiKey": "AIzaSyAhrW1FRd0knPF7LVYVZ-RLW1JKkpSITMI",
+    "authDomain": "anochat-8c03f.firebaseapp.com",
+    "databaseURL": "https://anochat-8c03f-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "projectId": "anochat-8c03f",
+    "storageBucket": "anochat-8c03f.firebasestorage.app",
+    "messagingSenderId": "537614906302",
+    "appId": "1:537614906302:web:de5ed7bb134cff4dc07fef",
+    "measurementId": "G-XLX7GY3G5L"
+  },
+  "imgbbKey": "96e6d350ede9686fad7333e1670ec983"
+}
