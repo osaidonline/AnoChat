@@ -124,76 +124,26 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
 
     <script>
-        // --- CONFIGURATION ---
-        // REPLACE THESE WITH YOUR FIREBASE PROJECT SETTINGS
-       // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-    const firebaseConfig = {
-      apiKey: "AIzaSyAhrW1FRd0knPF7LVYVZ-RLW1JKkpSITMI",
-      authDomain: "anochat-8c03f.firebaseapp.com",
-      databaseURL: "https://anochat-8c03f-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "anochat-8c03f",
-      storageBucket: "anochat-8c03f.firebasestorage.app",
-      messagingSenderId: "537614906302",
-      appId: "1:537614906302:web:de5ed7bb134cff4dc07fef",
-      measurementId: "G-XLX7GY3G5L"
-};
+    // Global variables to hold config data
+    let db;
+    let IMGBB_API_KEY;
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const IMGBB_API_KEY = "96e6d350ede9686fad7333e1670ec983"; 
+    // --- 1. ATTACH & FETCH JSON CONFIG ---
+    async function initApp() {
+        try {
+            const response = await fetch('config.json');
+            const config = await response.json();
+            
+            // Initialize Firebase using the JSON data
+            firebase.initializeApp(config.firebaseConfig);
+            db = firebase.database();
+            IMGBB_API_KEY = config.imgbbKey;
 
-        // State Management
-        let currentUser = { uid: localStorage.getItem('bsc_anon_uid') || crypto.randomUUID() };
-        localStorage.setItem('bsc_anon_uid', currentUser.uid);
-        
-        let displayName = "";
-        let isAdmin = false;
-        let renderedMsgIds = new Set();
-        let isFirstLoad = true;
-
-        // DOM Elements
-        const loginOverlay = document.getElementById('login-overlay');
-        const loginModalElement = document.getElementById('loginModal');
-        const loginModal = new bootstrap.Modal(loginModalElement);
-        const loginForm = document.getElementById('login-form');
-        const displayNameInput = document.getElementById('display-name-input');
-        const currentUserDisplay = document.getElementById('current-user-display');
-        const loginBtn = document.getElementById('login-btn');
-        const chatWindow = document.getElementById('chat-window');
-        const chatForm = document.getElementById('chat-form');
-        const messageInput = document.getElementById('message-input');
-        const sendBtn = document.getElementById('send-btn');
-        const emojiPicker = document.getElementById('emoji-picker');
-        const toggleEmojiBtn = document.getElementById('toggle-emoji-btn');
-        const imageUploadBtn = document.getElementById('image-upload-btn');
-        const imageFile = document.getElementById('image-file');
-
-        const badWords = ['sexy', 'fuck', 'shit', 'bitch', 'asshole', 'cunt', 'dick'];
-        
-        function filterText(text) {
-            let filtered = text;
-            badWords.forEach(word => {
-                const regex = new RegExp(`\\b${word}\\b`, 'gi');
-                filtered = filtered.replace(regex, 'bleep');
-            });
-            return filtered;
-        }
-
-        function stringToColor(str) {
-            let hash = 0;
-            for (let i = 0; i < str.length; i++) {
-                hash = str.charCodeAt(i) + ((hash << 5) - hash);
-            }
-            const h = Math.abs(hash % 360);
-            return `hsl(${h}, 75%, 35%)`;
-        }
-
-        window.onload = () => {
+            // Check for existing login
             const savedName = localStorage.getItem('bsc_chat_username');
             const savedPass = localStorage.getItem('bsc_chat_password');
             if (savedName && savedPass) {
@@ -201,185 +151,215 @@
             } else {
                 loginOverlay.style.display = 'flex';
             }
-        };
+        } catch (error) {
+            console.error("Error loading config:", error);
+            alert("Failed to load app configuration.");
+        }
+    }
 
-        loginForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const name = displayNameInput.value.trim();
-            const pass = document.getElementById('password-input').value.trim();
+    // Run the initialization when the window loads
+    window.onload = initApp;
 
-            if (name.toLowerCase() === 'osaid' && pass !== 'osaid1221') {
-                alert("❌ Incorrect Admin Password!");
-                return;
-            }
+    // --- 2. EXISTING APP LOGIC ---
+    // (Everything below remains exactly as you had it)
+    let currentUser = { uid: localStorage.getItem('bsc_anon_uid') || crypto.randomUUID() };
+    localStorage.setItem('bsc_anon_uid', currentUser.uid);
+    
+    let displayName = "";
+    let isAdmin = false;
+    let renderedMsgIds = new Set();
+    let isFirstLoad = true;
 
-            setIdentity(name, pass);
-            loginModal.hide();
-            localStorage.setItem('bsc_chat_username', name);
-            localStorage.setItem('bsc_chat_password', pass);
+    const loginOverlay = document.getElementById('login-overlay');
+    const loginModalElement = document.getElementById('loginModal');
+    const loginModal = new bootstrap.Modal(loginModalElement);
+    const loginForm = document.getElementById('login-form');
+    const displayNameInput = document.getElementById('display-name-input');
+    const currentUserDisplay = document.getElementById('current-user-display');
+    const loginBtn = document.getElementById('login-btn');
+    const chatWindow = document.getElementById('chat-window');
+    const chatForm = document.getElementById('chat-form');
+    const messageInput = document.getElementById('message-input');
+    const sendBtn = document.getElementById('send-btn');
+    const emojiPicker = document.getElementById('emoji-picker');
+    const toggleEmojiBtn = document.getElementById('toggle-emoji-btn');
+    const imageUploadBtn = document.getElementById('image-upload-btn');
+    const imageFile = document.getElementById('image-file');
+
+    const badWords = ['sexy', 'fuck', 'shit', 'bitch', 'asshole', 'cunt', 'dick'];
+    
+    function filterText(text) {
+        let filtered = text;
+        badWords.forEach(word => {
+            const regex = new RegExp(`\\b${word}\\b`, 'gi');
+            filtered = filtered.replace(regex, 'bleep');
         });
+        return filtered;
+    }
 
-        function setIdentity(name, pass) {
-            displayName = filterText(name);
-            isAdmin = (displayName.toLowerCase() === 'osaid' && pass === 'osaid1221');
-            
-            loginOverlay.classList.add('fade-out');
-            setTimeout(() => { loginOverlay.style.display = 'none'; }, 500); 
-            
-            messageInput.disabled = false;
-            sendBtn.disabled = false;
-            
-            currentUserDisplay.style.display = 'inline-block';
-            currentUserDisplay.innerHTML = `<i class="bi bi-person-fill"></i> ${displayName} ${isAdmin ? '<span class="badge bg-danger ms-1">Admin</span>' : ''}`;
-            loginBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Change Name';
-
-            startRealtimeListener();
+    function stringToColor(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
         }
+        const h = Math.abs(hash % 360);
+        return `hsl(${h}, 75%, 35%)`;
+    }
 
-        // --- FIREBASE REAL-TIME LOGIC ---
-
-        function startRealtimeListener() {
-            db.ref("messages").limitToLast(50).on("value", (snapshot) => {
-                const messages = [];
-                snapshot.forEach((child) => {
-                    messages.push({ id: child.key, ...child.val() });
-                });
-                renderMessages(messages);
-            });
+    loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = displayNameInput.value.trim();
+        const pass = document.getElementById('password-input').value.trim();
+        if (name.toLowerCase() === 'osaid' && pass !== 'osaid1221') {
+            alert("❌ Incorrect Admin Password!");
+            return;
         }
+        setIdentity(name, pass);
+        loginModal.hide();
+        localStorage.setItem('bsc_chat_username', name);
+        localStorage.setItem('bsc_chat_password', pass);
+    });
 
-        function renderMessages(messages) {
-            const isScrolledToBottom = chatWindow.scrollHeight - chatWindow.clientHeight <= chatWindow.scrollTop + 50;
-            chatWindow.innerHTML = ''; 
-            
-            messages.forEach(msg => {
-                const isMe = msg.authorUid === currentUser.uid;
-                const row = document.createElement('div');
-                row.className = `message-row ${isMe ? 'me' : 'other'}`;
-                const bgColor = stringToColor(msg.authorUid + msg.author);
-                const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...';
-                
-                let controlsHtml = '';
-                if (isMe) {
-                    controlsHtml += `<button onclick="editMessage('${msg.id}', \`${msg.text.replace(/`/g, "\\`")}\`)"><i class="bi bi-pencil"></i> Edit</button>`;
-                }
-                if (isMe || isAdmin) {
-                    controlsHtml += `<button onclick="deleteMessage('${msg.id}')" class="text-danger"><i class="bi bi-trash"></i> Delete</button>`;
-                }
+    function setIdentity(name, pass) {
+        displayName = filterText(name);
+        isAdmin = (displayName.toLowerCase() === 'osaid' && pass === 'osaid1221');
+        loginOverlay.classList.add('fade-out');
+        setTimeout(() => { loginOverlay.style.display = 'none'; }, 500); 
+        messageInput.disabled = false;
+        sendBtn.disabled = false;
+        currentUserDisplay.style.display = 'inline-block';
+        currentUserDisplay.innerHTML = `<i class="bi bi-person-fill"></i> ${displayName} ${isAdmin ? '<span class="badge bg-danger ms-1">Admin</span>' : ''}`;
+        loginBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Change Name';
+        startRealtimeListener();
+    }
 
-                const isNewMessage = !isFirstLoad && !renderedMsgIds.has(msg.id);
-                renderedMsgIds.add(msg.id);
-
-                row.innerHTML = `
-                    <div class="message-bubble ${isNewMessage ? 'animate-pop' : ''}" style="background-color: ${bgColor};">
-                        ${!isMe ? `<div class="author-name">${msg.author}</div>` : `<div class="author-name text-white-50">You</div>`}
-                        <div class="message-content">${msg.text}</div>
-                        ${msg.edited ? '<small class="text-white-50" style="font-size: 0.6rem;">(edited)</small>' : ''}
-                        <div class="timestamp">${timeStr}</div>
-                        ${controlsHtml ? `<div class="msg-controls">${controlsHtml}</div>` : ''}
-                    </div>
-                `;
-                chatWindow.appendChild(row);
+    function startRealtimeListener() {
+        db.ref("messages").limitToLast(50).on("value", (snapshot) => {
+            const messages = [];
+            snapshot.forEach((child) => {
+                messages.push({ id: child.key, ...child.val() });
             });
+            renderMessages(messages);
+        });
+    }
 
-            isFirstLoad = false;
-            if (isScrolledToBottom || chatWindow.scrollTop === 0) {
-                chatWindow.scrollTop = chatWindow.scrollHeight;
+    function renderMessages(messages) {
+        const isScrolledToBottom = chatWindow.scrollHeight - chatWindow.clientHeight <= chatWindow.scrollTop + 50;
+        chatWindow.innerHTML = ''; 
+        messages.forEach(msg => {
+            const isMe = msg.authorUid === currentUser.uid;
+            const row = document.createElement('div');
+            row.className = `message-row ${isMe ? 'me' : 'other'}`;
+            const bgColor = stringToColor(msg.authorUid + msg.author);
+            const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...';
+            
+            let controlsHtml = '';
+            if (isMe) {
+                controlsHtml += `<button onclick="editMessage('${msg.id}', \`${msg.text.replace(/`/g, "\\`")}\`)"><i class="bi bi-pencil"></i> Edit</button>`;
             }
+            if (isMe || isAdmin) {
+                controlsHtml += `<button onclick="deleteMessage('${msg.id}')" class="text-danger"><i class="bi bi-trash"></i> Delete</button>`;
+            }
+            const isNewMessage = !isFirstLoad && !renderedMsgIds.has(msg.id);
+            renderedMsgIds.add(msg.id);
+            row.innerHTML = `
+                <div class="message-bubble ${isNewMessage ? 'animate-pop' : ''}" style="background-color: ${bgColor};">
+                    ${!isMe ? `<div class="author-name">${msg.author}</div>` : `<div class="author-name text-white-50">You</div>`}
+                    <div class="message-content">${msg.text}</div>
+                    ${msg.edited ? '<small class="text-white-50" style="font-size: 0.6rem;">(edited)</small>' : ''}
+                    <div class="timestamp">${timeStr}</div>
+                    ${controlsHtml ? `<div class="msg-controls">${controlsHtml}</div>` : ''}
+                </div>
+            `;
+            chatWindow.appendChild(row);
+        });
+        isFirstLoad = false;
+        if (isScrolledToBottom || chatWindow.scrollTop === 0) {
+            chatWindow.scrollTop = chatWindow.scrollHeight;
         }
+    }
 
-        chatForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const rawText = messageInput.value.trim();
-            if (!rawText) return;
+    chatForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const rawText = messageInput.value.trim();
+        if (!rawText) return;
+        const safeText = filterText(rawText);
+        messageInput.value = ''; 
+        emojiPicker.classList.remove('show');
+        db.ref("messages").push({
+            text: safeText,
+            author: displayName,
+            authorUid: currentUser.uid,
+            timestamp: Date.now(),
+            edited: false
+        });
+    });
 
-            const safeText = filterText(rawText);
-            messageInput.value = ''; 
+    window.deleteMessage = (msgId) => {
+        if(confirm("Delete this message?")) {
+            db.ref("messages/" + msgId).remove();
+        }
+    };
+
+    window.editMessage = (msgId, oldText) => {
+        const newText = prompt("Edit your message:", oldText);
+        if (newText !== null && newText.trim() !== "" && newText !== oldText) {
+            db.ref("messages/" + msgId).update({
+                text: filterText(newText.trim()),
+                edited: true
+            });
+        }
+    };
+
+    const commonEmojis = ["😀", "😂", "🥰", "😎", "😭", "😡", "👍", "👎", "🔥", "✨", "🎉", "❤️", "💀", "🤓", "👀", "🙌", "🎓", "⚡️"];
+    commonEmojis.forEach(emoji => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'emoji-btn';
+        btn.innerText = emoji;
+        btn.onclick = () => {
+            messageInput.value += emoji;
+            messageInput.focus();
+        };
+        emojiPicker.appendChild(btn);
+    });
+
+    toggleEmojiBtn.addEventListener('click', () => emojiPicker.classList.toggle('show'));
+
+    document.addEventListener('click', (e) => {
+        if (!emojiPicker.contains(e.target) && !toggleEmojiBtn.contains(e.target)) {
             emojiPicker.classList.remove('show');
+        }
+    });
 
-            db.ref("messages").push({
-                text: safeText,
-                author: displayName,
-                authorUid: currentUser.uid,
-                timestamp: Date.now(),
-                edited: false
+    imageUploadBtn.addEventListener('click', () => imageFile.click());
+
+    imageFile.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const originalIcon = imageUploadBtn.innerHTML;
+        imageUploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        imageUploadBtn.disabled = true;
+        const formData = new FormData();
+        formData.append('image', file);
+        try {
+            const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+                method: 'POST',
+                body: formData
             });
-        });
-
-        window.deleteMessage = (msgId) => {
-            if(confirm("Delete this message?")) {
-                db.ref("messages/" + msgId).remove();
-            }
-        };
-
-        window.editMessage = (msgId, oldText) => {
-            const newText = prompt("Edit your message:", oldText);
-            if (newText !== null && newText.trim() !== "" && newText !== oldText) {
-                db.ref("messages/" + msgId).update({
-                    text: filterText(newText.trim()),
-                    edited: true
-                });
-            }
-        };
-
-        // Emojis
-        const commonEmojis = ["😀", "😂", "🥰", "😎", "😭", "😡", "👍", "👎", "🔥", "✨", "🎉", "❤️", "💀", "🤓", "👀", "🙌", "🎓", "⚡️"];
-        commonEmojis.forEach(emoji => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'emoji-btn';
-            btn.innerText = emoji;
-            btn.onclick = () => {
-                messageInput.value += emoji;
-                messageInput.focus();
-            };
-            emojiPicker.appendChild(btn);
-        });
-
-        toggleEmojiBtn.addEventListener('click', () => emojiPicker.classList.toggle('show'));
-
-        document.addEventListener('click', (e) => {
-            if (!emojiPicker.contains(e.target) && !toggleEmojiBtn.contains(e.target)) {
-                emojiPicker.classList.remove('show');
-            }
-        });
-
-        // Image Upload
-        imageUploadBtn.addEventListener('click', () => imageFile.click());
-
-        imageFile.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const originalIcon = imageUploadBtn.innerHTML;
-            imageUploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-            imageUploadBtn.disabled = true;
-
-            const formData = new FormData();
-            formData.append('image', file);
-
-            try {
-                const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await res.json();
-                
-                if (data.success) {
-                    const imgHtml = `<br><img src="${data.data.url}" style="max-width: 200px; border-radius: 8px; margin-top: 5px;">`;
-                    messageInput.value += imgHtml;
-                    chatForm.dispatchEvent(new Event('submit'));
-                } else {
-                    alert('Upload failed.');
-                }
-            } catch (error) {
-                alert('Upload error.');
-            } finally {
-                imageUploadBtn.innerHTML = originalIcon;
-                imageUploadBtn.disabled = false;
-                imageFile.value = ''; 
-            }
-        });
-    </script>
+            const data = await res.json();
+            if (data.success) {
+                const imgHtml = `<br><img src="${data.data.url}" style="max-width: 200px; border-radius: 8px; margin-top: 5px;">`;
+                messageInput.value += imgHtml;
+                chatForm.dispatchEvent(new Event('submit'));
+            } else { alert('Upload failed.'); }
+        } catch (error) { alert('Upload error.'); }
+        finally {
+            imageUploadBtn.innerHTML = originalIcon;
+            imageUploadBtn.disabled = false;
+            imageFile.value = ''; 
+        }
+    });
+</script>
 </body>
 </html>
