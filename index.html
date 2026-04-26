@@ -256,19 +256,25 @@
         });
 
         function setIdentity(name, pass) {
-            displayName = filterText(name);
-            isAdmin = (displayName.toLowerCase() === 'osaid' && pass === 'osaid1221');
-            
-            loginOverlay.classList.add('fade-out');
-            messageInput.disabled = false;
-            sendBtn.disabled = false;
-            
-            currentUserDisplay.style.display = 'inline-block';
-            currentUserDisplay.innerHTML = `<i class="bi bi-person-fill"></i> ${displayName} ${isAdmin ? '<span class="badge bg-danger ms-1">Admin</span>' : ''}`;
-            loginBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Change Name';
+    displayName = filterText(name);
+    isAdmin = (displayName.toLowerCase() === 'osaid' && pass === 'osaid1221');
+    
+    // --- BULLETPROOF FADE OUT FIX ---
+    loginOverlay.classList.add('fade-out');
+    setTimeout(() => {
+        loginOverlay.style.display = 'none'; // Forces it to hide no matter what!
+    }, 500); 
+    // --------------------------------
+    
+    messageInput.disabled = false;
+    sendBtn.disabled = false;
+    
+    currentUserDisplay.style.display = 'inline-block';
+    currentUserDisplay.innerHTML = `<i class="bi bi-person-fill"></i> ${displayName} ${isAdmin ? '<span class="badge bg-danger ms-1">Admin</span>' : ''}`;
+    loginBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Change Name';
 
-            startMessageListener();
-        }
+    startMessageListener();
+}
 
         // --- APPS SCRIPT LOGIC ---
 
